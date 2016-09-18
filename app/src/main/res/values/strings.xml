@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Phone</string>
+    <string name="preferences_title">Preferences</string>
+    <string name="settings_label">Settings</string>
+
+
+    <string name="pref_title_key_sequence">Key sequence</string>
+    <string name="pref_title_duration">Duration</string>
+    <string name="pref_title_sound">Play sound</string>
+
+    <string name="pref_summary_key_sequence">The key sequence to play in AR</string>
+    <string name="pref_summary_duration">Duration in milli seconds</string>
+    <string name="pref_summary_sound">Play a sound for each new key to press</string>
+
+</resources>
