@@ -343,7 +343,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
                 return true;
             }
         }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -398,11 +397,9 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
             mOpenCvCameraView.disableView();
     }
 
-    public void onCameraViewStarted(int width, int height) {
-    }
+    public void onCameraViewStarted(int width, int height) {}
 
-    public void onCameraViewStopped() {
-    }
+    public void onCameraViewStopped() {}
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
         mGr = inputFrame.gray();
@@ -429,11 +426,75 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
             if (!descriptorsCamera.empty()) {
                 dm.match(descriptorsTemplate, descriptorsCamera, matches);
 
-                // find the corners of the template image within the scene
-                findSceneCorners();
+                cornersCamera.create(0, 0, cornersCamera.type());
+                List<DMatch> matchesList = matches.toList();
+                if (matchesList.size() >= 4) {
+                    //float maxDist = 0;
+                    float minDist = 100;
 
-                // draw lines around detected object on top of camera image
-                if (DEBUG_MODE) draw();
+                    List<KeyPoint> keyPointsTemplateList  = keyPointsTemplate.toList();
+                    List<KeyPoint> keyPointsCameraList  = keyPointsCamera.toList();
+                    ArrayList<Point> goodTemplatePointsList = new ArrayList<>();
+                    ArrayList<Point> goodCameraPointsList = new ArrayList<>();
+
+                    double maxGoodMatchDist = 3 * minDist;
+
+                    for (DMatch match : matchesList) {
+                        if (match.distance < maxGoodMatchDist) {
+                            goodTemplatePointsList.add(
+                                    keyPointsTemplateList.get( match.queryIdx ).pt
+                            );
+                            goodCameraPointsList.add(
+                                    keyPointsCameraList.get( match.trainIdx ).pt
+                            );
+                        }
+
+                    }
+
+                    MatOfPoint2f goodTemplatePoints = new MatOfPoint2f();
+                    goodTemplatePoints.fromList(goodTemplatePointsList);
+                    MatOfPoint2f goodCameraPoints = new MatOfPoint2f();
+                    goodCameraPoints.fromList(goodCameraPointsList);
+
+                    Mat homography = Calib3d.findHomography(goodTemplatePoints, goodCameraPoints, Calib3d.RANSAC, 10);
+
+                    if (!homography.empty()) {
+                        Core.perspectiveTransform(cornersTemplate, cornersCamera, homography);
+                        Core.perspectiveTransform(keys, transformedKeys, homography);
+
+                        cornersCamera.convertTo(intCornersCamera, CvType.CV_32S);
+                        Rect bb = Imgproc.boundingRect(intCornersCamera);
+                        if (Imgproc.isContourConvex(intCornersCamera) && bb.width > 100 && bb.width < 1000) {
+                            if (cornersCamera.height() >= 4) {
+                                // draw lines around detected object on top of camera image
+                                if (DEBUG_MODE) {
+                                    Imgproc.line(output,
+                                            new Point(cornersCamera.get(0, 0)),
+                                            new Point(cornersCamera.get(1, 0)),
+                                            KEY_COLOR,
+                                            4);
+                                    Imgproc.line(output,
+                                            new Point(cornersCamera.get(1, 0)),
+                                            new Point(cornersCamera.get(2, 0)),
+                                            KEY_COLOR,
+                                            4);
+                                    Imgproc.line(output,
+                                            new Point(cornersCamera.get(2, 0)),
+                                            new Point(cornersCamera.get(3, 0)),
+                                            KEY_COLOR,
+                                            4);
+                                    Imgproc.line(output,
+                                            new Point(cornersCamera.get(3, 0)),
+                                            new Point(cornersCamera.get(0, 0)),
+                                            KEY_COLOR,
+                                            4);
+                                }
+                            }
+                            detectedKeys = transformedKeys.height() >= 12;
+                        }
+                    }
+                }
+
             } else {
                 Log.e(TAG, "no descriptors in camera scene");
             }
@@ -442,162 +503,22 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         }
     }
 
-
-    /**
-     * draws lines from corner to corner of detected object within camera image
-     */
-    private void draw() {
-        if (cornersCamera.height() < 4) {
-            // The target has not been found.
-            // Draw a thumbnail of the target in the upper-left
-            // corner so that the user knows what it is.
-            // Compute the thumbnail's larger dimension as half the
-            // video frame's smaller dimension.
-            int height = templGray.height();
-            int width = templGray.width();
-            int maxDimension = Math.min (mGr.width(), mGr.height() / 2);
-            double aspectRatio = width / (double)height;
-            if (height > width)  {
-                height = maxDimension;
-                width = (int)(height * aspectRatio);
-            } else {
-                width = maxDimension;
-                height = (int)(width / aspectRatio);
-            }
-
-            // Select the region of interest (ROI) where the thumbnail
-            // will be drawn.
-            Mat dstROI = mRgb.submat(0, height, 0, width);
-            // Copy a resized reference image into the ROI.
-            Imgproc.resize(templColor, dstROI, dstROI.size(),
-                    0.0, 0.0, Imgproc.INTER_AREA);
-            return;
-        }
-
-
-        Imgproc.line( output,
-                new Point(  cornersCamera.get(0,0)),
-                new Point ( cornersCamera.get(1,0)),
-                KEY_COLOR,
-                4 );
-        Imgproc.line( output,
-                new Point (  cornersCamera.get(1,0)),
-                new Point (  cornersCamera.get(2,0)),
-                KEY_COLOR,
-                4 );
-        Imgproc.line(output,
-                new Point(cornersCamera.get(2, 0)),
-                new Point(cornersCamera.get(3, 0)),
-                KEY_COLOR,
-                4);
-        Imgproc.line(output,
-                new Point(cornersCamera.get(3, 0)),
-                new Point(cornersCamera.get(0, 0)),
-                KEY_COLOR,
-                4);
-    }
-
-    /**
-     *  find the corners of the template image within the scene
-     */
-    private void findSceneCorners() {
-        cornersCamera.create(0, 0, cornersCamera.type());
-
-        List<DMatch> matchesList = matches.toList();
-        if (matchesList.size() < 4) {
-            // There are too few matches to find the homography.
-            return;
-        }
-
-        // Calculate the max and min distances between keypoints.
-        double maxDist = 0;
-        double minDist = Double.MAX_VALUE;
-        for (DMatch match : matchesList) {
-            double dist = match.distance;
-            if( dist < minDist ) minDist = dist;
-            if( dist > maxDist ) maxDist = dist;
-        }
-        Log.d(TAG,  "Min dist:" + minDist + " Max dist:" + maxDist);
-
-        // Identify "good" keypoints based on match distance.
-        List<KeyPoint> keyPointsTemplateList  = keyPointsTemplate.toList();
-        List<KeyPoint> keyPointsCameraList  = keyPointsCamera.toList();
-        ArrayList<Point> goodTemplatePointsList = new ArrayList<>();
-        ArrayList<Point> goodCameraPointsList = new ArrayList<>();
-        double maxGoodMatchDist = 1.75 * minDist;
-        for (DMatch match : matchesList) {
-            if (match.distance < maxGoodMatchDist) {
-                goodTemplatePointsList.add(
-                        keyPointsTemplateList.get( match.queryIdx ).pt
-                );
-                goodCameraPointsList.add(
-                        keyPointsCameraList.get( match.trainIdx ).pt
-                );
-            }
-
-        }
-
-        if (goodTemplatePointsList.size() < 4 ||
-            goodCameraPointsList.size() < 4) {
-            // There are too few good points to find the homography.
-            return;
-        }
-
-        // There are enough good points to find the homography.
-        // (Otherwise, the method would have already returned.)
-
-
-        // Convert the matched points to MatOfPoint2f format, as
-        // required by the Calib3d.findHomography function.
-        MatOfPoint2f goodTemplatePoints = new MatOfPoint2f();
-        goodTemplatePoints.fromList(goodTemplatePointsList);
-        MatOfPoint2f goodCameraPoints = new MatOfPoint2f();
-        goodCameraPoints.fromList(goodCameraPointsList);
-        //Log.d(TAG, "objList size:"+objList.length);
-        //Log.d(TAG, "goodCameraPointsList size:"+goodCameraPointsList.length);
-
-        // Find the homography.
-        Mat homography = Calib3d.findHomography(goodTemplatePoints, goodCameraPoints, Calib3d.RANSAC, 10);
-
-        if (!homography.empty()) {
-            // Use the homography to project the reference coordinates to scene coordinates
-            Core.perspectiveTransform(cornersTemplate, candidateCornersCamera, homography);
-            Core.perspectiveTransform(keys, transformedKeys, homography);
-
-            // Convert the scene corners to integer format, as required
-            // by the Imgproc.isContourConvex function.
-            candidateCornersCamera.convertTo(intCornersCamera, CvType.CV_32S);
-
-            Rect bb = Imgproc.boundingRect(intCornersCamera);
-            //Log.d(TAG, "boundingbox width:"+bb.width);
-
-            // Check whether the corners form a convex polygon. If not,
-            // (that is, if the corners form a concave polygon), the
-            // detection result is invalid because no real perspective can
-            // make the corners of a rectangular image look like a concave
-            // polygon!
-            if (Imgproc.isContourConvex(intCornersCamera) &&
-                bb.width > 100 && bb.width < 1000) {
-                candidateCornersCamera.copyTo(cornersCamera);
-                detectedKeys = transformedKeys.height() >= 12;
-
-            }
-
-        }
-        else {
-            Log.e(TAG, "homography empty");
-        }
-     }
-
     /**
      * display labels of keys augmented and display key sequence
      */
     private void displayKeys() {
-
        if (detectedKeys) {
            if (DEBUG_MODE) {
                for (int i = 0; i < KEY_DATABASE.length; i++) {
-                   Imgproc.putText(output, String.valueOf(KEY_DATABASE[i]), new Point(transformedKeys.get(i, 0)), FONT_FACE, SCALE, KEY_COLOR, THICKNESS);
+                   Imgproc.putText(
+                           output,
+                           String.valueOf(KEY_DATABASE[i]),
+                           new Point(transformedKeys.get(i, 0)),
+                           FONT_FACE,
+                           SCALE,
+                           KEY_COLOR,
+                           THICKNESS
+                   );
                }
            }
            if (!timerRunning) {
@@ -624,7 +545,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
                });
            }
 
-
            if (keyIndex < keyOrder.length()) {
                char numberAsChar = keyOrder.charAt(keyIndex);
 
@@ -640,7 +560,15 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
                if (indexOfKey != -1) {
                    //int number = (int) numberAsChar - 48;
                    //Log.d(TAG, "current number:"+number);
-                   Imgproc.putText(output, "X", new Point(transformedKeys.get(indexOfKey, 0)), FONT_FACE, SCALE, MARKED_KEY_COLOR, THICKNESS*2);
+                   Imgproc.putText(
+                           output,
+                           "X",
+                           new Point(transformedKeys.get(indexOfKey, 0)),
+                           FONT_FACE,
+                           SCALE,
+                           MARKED_KEY_COLOR,
+                           THICKNESS*2
+                   );
                }
            }
        }
