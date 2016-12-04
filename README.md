@@ -1,6 +1,6 @@
 # Augmented Reality Key Sequence for >= Android 4.0 #
 
-<img src="/arkeysequence.jpg" alt=""/>
+<img src="/arkeysequence.jpg" alt="" width="400"/>
 
 ### What is this repository for? ###
 * an augmented reality key sequence is shown when specific phone buttons are found within real time camera picture. A feature matching approach is used, which means that buttons are not recognized separately but with one template image including several buttons. The interval and the key sequence can be chosen via the GUI. Also playing a sound when a button shall be pressed can be enabled/disabled there.
@@ -24,7 +24,7 @@
 ### Test image ###
 Depending on your display settings it's might not possible to detect the keys on your screen. Printing the image should work better if you don't have the Alcatel hardware.
 
-<img src="/testimages/alcatel4028.jpg" alt=""/>
+<img src="/testimages/alcatel4028.jpg" alt="" width="600"/>
 
 ### Who do I talk to? ###
 * Repo owner and developer: android@michaeltroger.com
