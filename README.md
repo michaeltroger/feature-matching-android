@@ -3,7 +3,7 @@
 <img src="/arkeysequence.jpg" alt="" width="400"/>
 
 ### What is this repository for? ###
-* an augmented reality key sequence is shown when specific phone buttons are found within real time camera picture. A feature matching approach is used, which means that buttons are not recognized separately but with one template image including several buttons. The interval and the key sequence can be chosen via the GUI. Also playing a sound when a button shall be pressed can be enabled/disabled there.
+* an augmented reality key sequence is shown when specific phone buttons (Alcatel 4028) are found within the real time camera picture. A feature matching approach is used, which means that buttons are not recognized separately but with one template image representing several buttons. The interval and the key sequence can be chosen via the GUI. Also playing a sound when a button shall be pressed can be enabled/disabled there.
 * the optional debug mode shows the label of the buttons on top of the camera image and draws also a border around the detected area.
 * the template image and the hardcoded key database is based on the business phone Alcatel-Lucent phone IP Touch 4028 extended edition  
 * Version 1.0
