@@ -177,10 +177,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
      */
     private Mat cornersCamera;
     /**
-     * possible corners detected in camera image
-     */
-    private Mat candidateCornersCamera;
-    /**
      * the good detected corners recognized in camera image as integers
      */
     private MatOfPoint intCornersCamera;
@@ -270,7 +266,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 
                     // init matrices who hold detected corners later
                     cornersCamera = new Mat(4, 1, CvType.CV_32FC2);
-                    candidateCornersCamera  = new Mat(4, 1, CvType.CV_32FC2);
                     intCornersCamera = new MatOfPoint();
 
                     // the coordinates of the keys within the image
