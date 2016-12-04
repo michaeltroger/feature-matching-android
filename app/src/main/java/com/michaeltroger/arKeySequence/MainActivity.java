@@ -251,7 +251,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
                         e.printStackTrace();
                     }
 
-
                     // convert the loaded image to gray-scale and color
                     templGray = new Mat();
                     templColor = new Mat();
@@ -293,8 +292,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
                     keys.put(11,0, 470, 500);
 
                     transformedKeys = new Mat();
-
-
                 } break;
                 default:
                 {
@@ -308,7 +305,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         Log.i(TAG, "Instantiated new " + this.getClass());
     }
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "called onCreate");
@@ -319,7 +315,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.tutorial1_activity_java_surface_view);
 
-        // Michael Troger
         if (FIXED_FRAME_SIZE) {
             mOpenCvCameraView.setMaxFrameSize(FRAME_SIZE_WIDTH, FRAME_SIZE_HEIGHT);
         }
@@ -380,8 +375,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         switch (requestCode) {
             case RESULT_SETTINGS:
                 loadSettings();
-
-
                 break;
         }
     }
@@ -424,7 +417,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 
         return output;
     }
-
 
     /**
      * responsible for keypoint matching - searches for template images within scene
@@ -503,18 +495,12 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
                 new Point(cornersCamera.get(0, 0)),
                 KEY_COLOR,
                 4);
-
     }
 
     /**
      *  find the corners of the template image within the scene
      */
     private void findSceneCorners() {
-       /* Mat imgMatches = new Mat();
-        Features2d.drawMatches(templGray, keyPointsTemplate, mGr, keyPointsCamera,
-                matches, imgMatches);
-        Imgproc.resize(imgMatches, mRgb, mGr.size());
-        */
         cornersCamera.create(0, 0, cornersCamera.type());
 
         List<DMatch> matchesList = matches.toList();
@@ -524,7 +510,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         }
 
         // Calculate the max and min distances between keypoints.
-
         double maxDist = 0;
         double minDist = Double.MAX_VALUE;
         for (DMatch match : matchesList) {
@@ -533,35 +518,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
             if( dist > maxDist ) maxDist = dist;
         }
         Log.d(TAG,  "Min dist:" + minDist + " Max dist:" + maxDist);
-
-        // The thresholds for minDist are chosen subjectively
-        // based on testing. The unit is not related to pixel
-        // distances; it is related to the number of failed tests
-        // for similarity between the matched descriptors.
-        /*if (minDist > 50) {
-            // The target is completely lost.
-            // Discard any previously found corners.
-            cornersCamera.create(0, 0, cornersCamera.type());
-            return;
-        }
-        else if (minDist > 25.0) {
-            // The target is lost but maybe it is still close.
-            // Keep any previously found corners.
-            return;
-        }*/
-
-
-
-        /*
-        List<DMatch> goodMatches = new ArrayList<>();
-        for (int i = 0; i < descriptorsTemplate.rows(); i++) {
-            if (matchesList.get(i).distance < 3 * minDist)  {
-                goodMatches.add( matchesList.get(i));
-            }
-        }*/
-       // MatOfDMatch mat = new MatOfDMatch();
-       // mat.fromList(goodMatches);
-
 
         // Identify "good" keypoints based on match distance.
         List<KeyPoint> keyPointsTemplateList  = keyPointsTemplate.toList();
@@ -631,14 +587,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         else {
             Log.e(TAG, "homography empty");
         }
-        //Log.d(TAG, "cornersTemplate - depth:" + cornersTemplate.depth() + " channels:" + cornersTemplate.channels() + " width:" + cornersTemplate.size().width + " height:" + cornersTemplate.size().height);
-        //Log.d(TAG, "homography - depth:" + homography.depth() + " channels:" + homography.channels() + " width:" + homography.size().width + " height:" + homography.size().height);
-
-
-        //Log.d(TAG, "cornersCamera - depth:" + cornersCamera.depth() + " channels:" + cornersCamera.channels() + " width:" + cornersCamera.size().width + " height:" + cornersCamera.size().height);
-
-
-    }
+     }
 
     /**
      * display labels of keys augmented and display key sequence
@@ -649,7 +598,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
            if (DEBUG_MODE) {
                for (int i = 0; i < KEY_DATABASE.length; i++) {
                    Imgproc.putText(output, String.valueOf(KEY_DATABASE[i]), new Point(transformedKeys.get(i, 0)), FONT_FACE, SCALE, KEY_COLOR, THICKNESS);
-
                }
            }
            if (!timerRunning) {
@@ -660,17 +608,16 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
                        handler.postDelayed(new Runnable() {
                            public void run() {
                                //Log.d(TAG, "timer finished");
+                                if (keyIndex < keyOrder.length() -1) {
+                                    keyIndex++;
+                                } else {
+                                    keyIndex = 0;
+                                }
+                                timerRunning = false;
 
-                                    if (keyIndex < keyOrder.length() -1) {
-                                        keyIndex++;
-                                    } else {
-                                        keyIndex = 0;
-                                    }
-                                   timerRunning = false;
-
-                                    if (playSound) bearSound.start();
-
-
+                                if (playSound) {
+                                    bearSound.start();
+                                }
                            }
                        }, keyDisplayDuration);
                    }
@@ -691,19 +638,13 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
                }
 
                if (indexOfKey != -1) {
-
-                   int number = (int) numberAsChar - 48;
+                   //int number = (int) numberAsChar - 48;
                    //Log.d(TAG, "current number:"+number);
-
                    Imgproc.putText(output, "X", new Point(transformedKeys.get(indexOfKey, 0)), FONT_FACE, SCALE, MARKED_KEY_COLOR, THICKNESS*2);
                }
-
-
-
            }
-
        }
-        detectedKeys = false;
+       detectedKeys = false;
     }
 
 }
