@@ -6,13 +6,14 @@
 * Version 1.0
 
 ### How do I get set up? ###
-* IDE: Android Studio 1.5.1
+* IDE: Android Studio (tested with 2.2.2)
 * Android SDK
-* Dependencies: OpenCV 3.0.0
+* Dependencies: OpenCV 3.0.0 library (included)
 * Mode (debug/release): Flag in MainActivity
 * Configuration key labels: a matrix defined in MainActivity is used to draw the labels for the buttons
 * Configuration key location: a matrix defined in MainActivity is responsible for setting the position of each button within the template image
 * Template image location: res/drawable | Sound files location: res/raw
+* Make sure the app has the required permission on start, as there is no runtime-check yet! (Camera)
 
 ### Who do I talk to? ###
-* Repo owner and developer: michael.troger@student.pxl.be
+* Repo owner and developer: android@michaeltroger.com
