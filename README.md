@@ -17,7 +17,7 @@
 * Make sure the app has the required permission on start, as there is no runtime-check yet! (Camera)
 
 ### Template image ###
-<img src="/app/src/main/res/drawable/phone.jpg" alt=""/>
+<img src="/app/src/main/res/drawable/phone.jpg" alt="" width="200" />
 
 ### Test image ###
 Depending on your display settings it's might not possible to detect the keys on your screen. Printing it should work better if you don't have the hardware.
