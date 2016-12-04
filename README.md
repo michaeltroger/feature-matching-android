@@ -22,7 +22,7 @@
 <img src="/app/src/main/res/drawable/phone.jpg" alt="" width="200" />
 
 ### Test image ###
-Depending on your display settings it's might not possible to detect the keys on your screen. Printing it should work better if you don't have the hardware.
+Depending on your display settings it's might not possible to detect the keys on your screen. Printing the image should work better if you don't have the Alcatel hardware.
 
 <img src="/testimages/alcatel4028.jpg" alt=""/>
 
