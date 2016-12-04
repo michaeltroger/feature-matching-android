@@ -1,4 +1,4 @@
-package be.pxl.troger.phone;
+package com.michaeltroger.arKeySequence;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
@@ -365,8 +365,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
      */
     private void loadSettings() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        keyOrder = prefs.getString("pref_key_key_sequence", "");
-        keyDisplayDuration = Integer.parseInt(prefs.getString("pref_key_duration", ""));
+        keyOrder = prefs.getString("pref_key_key_sequence", "41538");
+        keyDisplayDuration = Integer.parseInt(prefs.getString("pref_key_duration", "3000"));
         playSound = prefs.getBoolean("pref_key_sound", true);
         keyIndex = 0;
         Log.d(TAG, "key sequence: " + keyOrder);
@@ -448,10 +448,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         } else {
             Log.e(TAG, "no keypoints in camera scene");
         }
-
-
-
-
     }
 
 

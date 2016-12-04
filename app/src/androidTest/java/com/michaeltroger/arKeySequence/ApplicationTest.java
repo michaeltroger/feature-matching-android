@@ -1,4 +1,4 @@
-package be.pxl.troger.phone;
+package com.michaeltroger.arKeySequence;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
