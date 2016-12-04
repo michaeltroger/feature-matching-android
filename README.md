@@ -15,7 +15,7 @@
 * Mode (debug/release): Flag in MainActivity
 * Configuration key labels: a matrix defined in MainActivity is used to draw the labels for the buttons
 * Configuration key location: a matrix defined in MainActivity is responsible for setting the position of each button within the template image
-* Template image location: res/drawable | Sound files location: res/raw
+* Template image location: res/drawable (chooseable in MainActivity) | Sound files location: res/raw
 * Make sure the app has the required permission on start, as there is no runtime-check yet! (Camera)
 
 ### Template image ###
