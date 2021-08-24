@@ -1,4 +1,4 @@
-package com.michaeltroger.arKeySequence;
+package com.michaeltroger.featurematching;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
@@ -27,16 +27,8 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import android.app.Activity;
-import android.content.Intent;
-import android.content.SharedPreferences;
-import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.os.Handler;
-import android.preference.PreferenceManager;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 
@@ -50,16 +42,12 @@ import java.util.List;
 public class MainActivity extends Activity implements CvCameraViewListener2 {
     private CameraBridgeViewBase mOpenCvCameraView;
     private boolean              mIsJavaCamera = true;
-    private MenuItem             mItemSwitchCamera = null;
 
     /**
      * class name for debugging with logcat
      */
     private static final String TAG = MainActivity.class.getSimpleName();
-    /**
-     * if enabled key labels and borders of object are drawn on top of camera image
-     */
-    private static final boolean DEBUG_MODE = true;
+
     /**
      * The template image to use
      */
@@ -67,12 +55,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
     /**
      * the database of the keys in correct order
      */
-    private static final char[] KEY_DATABASE = {
-            '1','2','3',
-            '4','5','6',
-            '7','8','9',
-            '*','0','#'
-    };
     /**
      * frame size width
      */
@@ -86,31 +68,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
      * 640 x 480
      */
     private static final boolean FIXED_FRAME_SIZE = true;
-
-    /**
-     * for detecting finishing other activity (settings)
-     */
-    private static final int RESULT_SETTINGS = 1;
-    /**
-     * the key sequence to dial
-     */
-    private String keyOrder;
-    /**
-     * after how many milliseconds the next key should be pressed
-     */
-    private int keyDisplayDuration;
-    /**
-     * the current index within the keyOrder sequence
-     */
-    private int keyIndex = 0;
-    /**
-     * whether or not the keys have been detected
-     */
-    private boolean detectedKeys = false;
-    /**
-     * flag which shows if changing key (waiting for some seconds) is in work
-     */
-    private boolean timerRunning = false;
 
     /**
      * The ORB feature detector
@@ -182,43 +139,9 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
     private MatOfPoint intCornersCamera;
 
     /**
-     * the sound of a bear
-     */
-    private MediaPlayer bearSound;
-    /**
-     * the coordinates of the keys within template image
-     */
-    private Mat keys;
-    /**
-     * the calculated transformed coordinates of the keys within the camera image
-     */
-    private Mat transformedKeys;
-
-    /**
      * the color of the key labels
      */
     private static final Scalar KEY_COLOR = new Scalar(0, 255, 0);
-
-    /**
-     * color of the marking label
-     */
-    private static final Scalar MARKED_KEY_COLOR = new Scalar(255, 0, 0);
-    /**
-     * the font face used for labels
-     */
-    private static final int FONT_FACE = Core.FONT_HERSHEY_SIMPLEX;
-    /**
-     * the scale/size of text used for labels
-     */
-    private static final double SCALE = 1;//0.4;
-    /**
-     * the thickness of text used for labels
-     */
-    private static final int THICKNESS = 3;//1;
-    /**
-     * whether or not to play sound
-     */
-    private boolean playSound;
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -267,26 +190,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
                     // init matrices who hold detected corners later
                     cornersCamera = new Mat(4, 1, CvType.CV_32FC2);
                     intCornersCamera = new MatOfPoint();
-
-                    // the coordinates of the keys within the image
-                    keys = new Mat(KEY_DATABASE.length, 1, CvType.CV_32FC2);
-                    keys.put(0,0, 70, 80);
-                    keys.put(1,0, 260, 80);
-                    keys.put(2,0, 470, 80);
-
-                    keys.put(3,0, 70, 200);
-                    keys.put(4,0, 260, 200);
-                    keys.put(5,0, 470, 200);
-
-                    keys.put(6,0, 70, 350);
-                    keys.put(7,0, 260, 350);
-                    keys.put(8,0, 470, 350);
-
-                    keys.put(9,0, 70, 500);
-                    keys.put(10,0, 260, 500);
-                    keys.put(11,0, 470, 500);
-
-                    transformedKeys = new Mat();
                 } break;
                 default:
                 {
@@ -314,31 +217,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
             mOpenCvCameraView.setMaxFrameSize(FRAME_SIZE_WIDTH, FRAME_SIZE_HEIGHT);
         }
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
-        bearSound = MediaPlayer.create(this, R.raw.bear);
-        loadSettings();
         mOpenCvCameraView.setCvCameraViewListener(this);
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu)
-    {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
-        return true;
-    }
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item)
-    {
-        switch(item.getItemId())
-        {
-            case R.id.preferences:
-            {
-                Intent intent = new Intent(this, SettingsActivity.class);
-                startActivityForResult(intent, RESULT_SETTINGS);
-                return true;
-            }
-        }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -347,30 +226,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         super.onPause();
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
-    }
-
-    /**
-     * loads user settings which are customizable via gui
-     */
-    private void loadSettings() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        keyOrder = prefs.getString("pref_key_key_sequence", "41538");
-        keyDisplayDuration = Integer.parseInt(prefs.getString("pref_key_duration", "3000"));
-        playSound = prefs.getBoolean("pref_key_sound", true);
-        keyIndex = 0;
-        Log.d(TAG, "key sequence: " + keyOrder);
-        Log.d(TAG, "key duration: " + keyDisplayDuration);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        switch (requestCode) {
-            case RESULT_SETTINGS:
-                loadSettings();
-                break;
-        }
     }
 
     @Override
@@ -403,9 +258,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 
         // do the key point matching
         keypointMatching();
-
-        // display keys and the to do key sequence
-        displayKeys();
 
         return output;
     }
@@ -455,37 +307,34 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 
                     if (!homography.empty()) {
                         Core.perspectiveTransform(cornersTemplate, cornersCamera, homography);
-                        Core.perspectiveTransform(keys, transformedKeys, homography);
 
                         cornersCamera.convertTo(intCornersCamera, CvType.CV_32S);
                         Rect bb = Imgproc.boundingRect(intCornersCamera);
                         if (Imgproc.isContourConvex(intCornersCamera) && bb.width > 100 && bb.width < 1000) {
                             if (cornersCamera.height() >= 4) {
                                 // draw lines around detected object on top of camera image
-                                if (DEBUG_MODE) {
-                                    Imgproc.line(output,
-                                            new Point(cornersCamera.get(0, 0)),
-                                            new Point(cornersCamera.get(1, 0)),
-                                            KEY_COLOR,
-                                            4);
-                                    Imgproc.line(output,
-                                            new Point(cornersCamera.get(1, 0)),
-                                            new Point(cornersCamera.get(2, 0)),
-                                            KEY_COLOR,
-                                            4);
-                                    Imgproc.line(output,
-                                            new Point(cornersCamera.get(2, 0)),
-                                            new Point(cornersCamera.get(3, 0)),
-                                            KEY_COLOR,
-                                            4);
-                                    Imgproc.line(output,
-                                            new Point(cornersCamera.get(3, 0)),
-                                            new Point(cornersCamera.get(0, 0)),
-                                            KEY_COLOR,
-                                            4);
-                                }
+
+                                Imgproc.line(output,
+                                        new Point(cornersCamera.get(0, 0)),
+                                        new Point(cornersCamera.get(1, 0)),
+                                        KEY_COLOR,
+                                        4);
+                                Imgproc.line(output,
+                                        new Point(cornersCamera.get(1, 0)),
+                                        new Point(cornersCamera.get(2, 0)),
+                                        KEY_COLOR,
+                                        4);
+                                Imgproc.line(output,
+                                        new Point(cornersCamera.get(2, 0)),
+                                        new Point(cornersCamera.get(3, 0)),
+                                        KEY_COLOR,
+                                        4);
+                                Imgproc.line(output,
+                                        new Point(cornersCamera.get(3, 0)),
+                                        new Point(cornersCamera.get(0, 0)),
+                                        KEY_COLOR,
+                                        4);
                             }
-                            detectedKeys = transformedKeys.height() >= 12;
                         }
                     }
                 }
@@ -496,78 +345,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         } else {
             Log.e(TAG, "no keypoints in camera scene");
         }
-    }
-
-    /**
-     * display labels of keys augmented and display key sequence
-     */
-    private void displayKeys() {
-       if (detectedKeys) {
-           if (DEBUG_MODE) {
-               for (int i = 0; i < KEY_DATABASE.length; i++) {
-                   Imgproc.putText(
-                           output,
-                           String.valueOf(KEY_DATABASE[i]),
-                           new Point(transformedKeys.get(i, 0)),
-                           FONT_FACE,
-                           SCALE,
-                           KEY_COLOR,
-                           THICKNESS
-                   );
-               }
-           }
-           if (!timerRunning) {
-               this.runOnUiThread(new Runnable() {
-                   public void run() {
-                       timerRunning = true;
-                       Handler handler = new Handler();
-                       handler.postDelayed(new Runnable() {
-                           public void run() {
-                               //Log.d(TAG, "timer finished");
-                                if (keyIndex < keyOrder.length() -1) {
-                                    keyIndex++;
-                                } else {
-                                    keyIndex = 0;
-                                }
-                                timerRunning = false;
-
-                                if (playSound) {
-                                    bearSound.start();
-                                }
-                           }
-                       }, keyDisplayDuration);
-                   }
-               });
-           }
-
-           if (keyIndex < keyOrder.length()) {
-               char numberAsChar = keyOrder.charAt(keyIndex);
-
-               int indexOfKey = -1;
-               for (int i = 0; i < KEY_DATABASE.length; i++) {
-                   if (KEY_DATABASE[i] == numberAsChar) {
-                       //Log.d(TAG, "found index of key:"+i);
-                       indexOfKey = i;
-                       break;
-                   }
-               }
-
-               if (indexOfKey != -1) {
-                   //int number = (int) numberAsChar - 48;
-                   //Log.d(TAG, "current number:"+number);
-                   Imgproc.putText(
-                           output,
-                           "X",
-                           new Point(transformedKeys.get(indexOfKey, 0)),
-                           FONT_FACE,
-                           SCALE,
-                           MARKED_KEY_COLOR,
-                           THICKNESS*2
-                   );
-               }
-           }
-       }
-       detectedKeys = false;
     }
 
 }
