@@ -51,7 +51,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
     /**
      * The template image to use
      */
-    private static final int TEMPLATE_IMAGE = R.drawable.phone;
+    private static final int TEMPLATE_IMAGE = R.drawable.coca_cola;
     /**
      * the database of the keys in correct order
      */
