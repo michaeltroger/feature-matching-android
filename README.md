@@ -1,33 +1,26 @@
-# Augmented Reality Key Sequence for >= Android 4.0 #
+# Augmented Reality Template Matching for >= Android 4.0
+## Approach: Feature Matching - Brute-Force Matching with ORB Descriptors
+Attention: This app was created in 2016. I was a beginner to Android development and Computer Vision back then. So don't expect a perfect code please. In 2021 I updated the project to build with the latest Android Studio (2020.3.1), updated most dependencies and converted it to Kotlin, while the business logic remained unchanged.
 
-<img src="/arkeysequence.jpg" alt="" width="400"/>
+<img src="/tbd.jpg" alt="" width="800"/>
 
 ### What is this repository for? ###
-* an augmented reality key sequence is shown when specific phone buttons (Alcatel 4028) are found within the real time camera picture. A feature matching approach is used, which means that buttons are not recognized separately but with one template image representing several buttons. The interval and the key sequence can be chosen via the GUI. Also playing a sound when a button shall be pressed can be enabled/disabled there.
-* the optional debug mode shows the label of the buttons on top of the camera image and draws also a border around the detected area.
-* the template image and the hardcoded key database is based on the business phone Alcatel-Lucent phone IP Touch 4028 extended edition  
-* Version 1.0
+* Uses the camera image to search for a specified template image within it via a feature matching approach using the OpenCV library. The detected object is marked with lines within the scene. This can be used to e.g. find a logo.
+* Be aware that template matching doesn't allow any rotations or zooming of the camera. Hold the camera without dip and at the 1:1 correct zoom. Otherwise the template image won't be found within the camera image.
 
 ### How do I get set up? ###
-* IDE: Android Studio (tested with 2.2.2)
+* IDE: Android Studio (tested with 2020.3.1)
 * Android SDK
-* Dependencies: OpenCV 3.0.0 library (included)
-* Mode (debug/release): Flag in MainActivity
-* Configuration key labels: a matrix defined in MainActivity is used to draw the labels for the buttons
-* Configuration key location: a matrix defined in MainActivity is responsible for setting the position of each button within the template image
-* Template image location: res/drawable (chooseable in MainActivity) | Sound files location: res/raw
-* Make sure the app has the required permission on start, as there is no runtime-check yet! (Camera)
+* Dependencies: OpenCV 3 library (included) [License](/opencv-3-4-15/LICENSE)
+* Template image location: res/drawable (chooseable in MainActivity)
 
 ### Template image ###
-<img src="/app/src/main/res/drawable/phone.jpg" alt="" width="200" />
-
-### Test image ###
-Depending on your display settings it's might not possible to detect the keys on your screen. Printing the image should work better if you don't have the Alcatel hardware.
-
-<img src="/testimages/alcatel4028.jpg" alt="" width="600"/>
+Used default template image:
+<img src="/app/src/main/res/drawable/coca_cola.bmp" alt="" width="200" />
+Copyright of the logo: The Coca-Cola Company
 
 ### Who do I talk to? ###
 * Repo owner and developer: android@michaeltroger.com
 
 ### Credits
-* The feature matching is based on this official OpenCV tutorial http://docs.opencv.org/2.4/doc/tutorials/features2d/feature_homography/feature_homography.html Unlike in this application their version is using OpenCV 2, C++ and is for use with normal images
+* The feature matching is based on this official OpenCV tutorial http://docs.opencv.org/2.4/doc/tutorials/features2d/feature_homography/feature_homography.html Unlike in this application their version is using OpenCV 2, C++ and is for use with regular static images
