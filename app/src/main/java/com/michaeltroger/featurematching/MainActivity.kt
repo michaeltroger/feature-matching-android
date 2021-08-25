@@ -256,72 +256,72 @@ class MainActivity : ComponentActivity(), CvCameraViewListener2 {
         dm!!.match(descriptorsTemplate, descriptorsCamera, matches)
         cornersCamera!!.create(0, 0, cornersCamera!!.type())
         val matchesList = matches!!.toList()
-        if (matchesList.size >= 4) {
-            //float maxDist = 0;
-            val minDist = 100f
-            val keyPointsTemplateList = keyPointsTemplate!!.toList()
-            val keyPointsCameraList = keyPointsCamera!!.toList()
-            val goodTemplatePointsList = ArrayList<Point>()
-            val goodCameraPointsList = ArrayList<Point>()
-            val maxGoodMatchDist = (3 * minDist).toDouble()
-            for (match in matchesList) {
-                if (match.distance < maxGoodMatchDist) {
-                    goodTemplatePointsList.add(
-                        keyPointsTemplateList[match.queryIdx].pt
-                    )
-                    goodCameraPointsList.add(
-                        keyPointsCameraList[match.trainIdx].pt
-                    )
-                }
+        if (matchesList.size < 4) {
+            return
+        }
+        //float maxDist = 0;
+        val minDist = 100f
+        val keyPointsTemplateList = keyPointsTemplate!!.toList()
+        val keyPointsCameraList = keyPointsCamera!!.toList()
+        val goodTemplatePointsList = ArrayList<Point>()
+        val goodCameraPointsList = ArrayList<Point>()
+        val maxGoodMatchDist = (3 * minDist).toDouble()
+        for (match in matchesList) {
+            if (match.distance < maxGoodMatchDist) {
+                goodTemplatePointsList.add(
+                    keyPointsTemplateList[match.queryIdx].pt
+                )
+                goodCameraPointsList.add(
+                    keyPointsCameraList[match.trainIdx].pt
+                )
             }
-            val goodTemplatePoints = MatOfPoint2f()
-            goodTemplatePoints.fromList(goodTemplatePointsList)
-            val goodCameraPoints = MatOfPoint2f()
-            goodCameraPoints.fromList(goodCameraPointsList)
-            val homography = Calib3d.findHomography(
-                goodTemplatePoints,
-                goodCameraPoints,
-                Calib3d.RANSAC,
-                10.0
+        }
+        val goodTemplatePoints = MatOfPoint2f()
+        goodTemplatePoints.fromList(goodTemplatePointsList)
+        val goodCameraPoints = MatOfPoint2f()
+        goodCameraPoints.fromList(goodCameraPointsList)
+        val homography = Calib3d.findHomography(
+            goodTemplatePoints,
+            goodCameraPoints,
+            Calib3d.RANSAC,
+            10.0
+        )
+        if (homography.empty()) {
+            return
+        }
+        Core.perspectiveTransform(cornersTemplate, cornersCamera, homography)
+        cornersCamera!!.convertTo(intCornersCamera, CvType.CV_32S)
+        val bb = Imgproc.boundingRect(intCornersCamera)
+        if (Imgproc.isContourConvex(intCornersCamera) && bb.width > 100 && bb.width < 1000 && cornersCamera!!.height() >= 4) {
+            // draw lines around detected object on top of camera image
+            Imgproc.line(
+                output,
+                Point(cornersCamera!![0, 0]),
+                Point(cornersCamera!![1, 0]),
+                KEY_COLOR,
+                4
             )
-            if (!homography.empty()) {
-                Core.perspectiveTransform(cornersTemplate, cornersCamera, homography)
-                cornersCamera!!.convertTo(intCornersCamera, CvType.CV_32S)
-                val bb = Imgproc.boundingRect(intCornersCamera)
-                if (Imgproc.isContourConvex(intCornersCamera) && bb.width > 100 && bb.width < 1000) {
-                    if (cornersCamera!!.height() >= 4) {
-                        // draw lines around detected object on top of camera image
-                        Imgproc.line(
-                            output,
-                            Point(cornersCamera!![0, 0]),
-                            Point(cornersCamera!![1, 0]),
-                            KEY_COLOR,
-                            4
-                        )
-                        Imgproc.line(
-                            output,
-                            Point(cornersCamera!![1, 0]),
-                            Point(cornersCamera!![2, 0]),
-                            KEY_COLOR,
-                            4
-                        )
-                        Imgproc.line(
-                            output,
-                            Point(cornersCamera!![2, 0]),
-                            Point(cornersCamera!![3, 0]),
-                            KEY_COLOR,
-                            4
-                        )
-                        Imgproc.line(
-                            output,
-                            Point(cornersCamera!![3, 0]),
-                            Point(cornersCamera!![0, 0]),
-                            KEY_COLOR,
-                            4
-                        )
-                    }
-                }
-            }
+            Imgproc.line(
+                output,
+                Point(cornersCamera!![1, 0]),
+                Point(cornersCamera!![2, 0]),
+                KEY_COLOR,
+                4
+            )
+            Imgproc.line(
+                output,
+                Point(cornersCamera!![2, 0]),
+                Point(cornersCamera!![3, 0]),
+                KEY_COLOR,
+                4
+            )
+            Imgproc.line(
+                output,
+                Point(cornersCamera!![3, 0]),
+                Point(cornersCamera!![0, 0]),
+                KEY_COLOR,
+                4
+            )
         }
     }
 
