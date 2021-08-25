@@ -5,13 +5,11 @@ import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2
 import org.opencv.features2d.FeatureDetector
 import org.opencv.features2d.DescriptorExtractor
 import org.opencv.features2d.DescriptorMatcher
-import com.michaeltroger.featurematching.MainActivity
 import org.opencv.imgcodecs.Imgcodecs
 import org.opencv.imgproc.Imgproc
 import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
-import com.michaeltroger.featurematching.R
 import android.view.SurfaceView
 import android.view.View
 import org.opencv.android.*
@@ -23,7 +21,6 @@ import java.util.ArrayList
 
 class MainActivity : Activity(), CvCameraViewListener2 {
     private var mOpenCvCameraView: CameraBridgeViewBase? = null
-    private val mIsJavaCamera = true
 
     /**
      * The ORB feature detector
@@ -218,83 +215,82 @@ class MainActivity : Activity(), CvCameraViewListener2 {
     private fun keypointMatching() {
         fd!!.detect(mRgb, keyPointsCamera)
         if (!keyPointsCamera!!.empty()) {
-            de!!.compute(mRgb, keyPointsCamera, descriptorsCamera)
-            if (!descriptorsCamera!!.empty()) {
-                dm!!.match(descriptorsTemplate, descriptorsCamera, matches)
-                cornersCamera!!.create(0, 0, cornersCamera!!.type())
-                val matchesList = matches!!.toList()
-                if (matchesList.size >= 4) {
-                    //float maxDist = 0;
-                    val minDist = 100f
-                    val keyPointsTemplateList = keyPointsTemplate!!.toList()
-                    val keyPointsCameraList = keyPointsCamera!!.toList()
-                    val goodTemplatePointsList = ArrayList<Point>()
-                    val goodCameraPointsList = ArrayList<Point>()
-                    val maxGoodMatchDist = (3 * minDist).toDouble()
-                    for (match in matchesList) {
-                        if (match.distance < maxGoodMatchDist) {
-                            goodTemplatePointsList.add(
-                                keyPointsTemplateList[match.queryIdx].pt
-                            )
-                            goodCameraPointsList.add(
-                                keyPointsCameraList[match.trainIdx].pt
-                            )
-                        }
-                    }
-                    val goodTemplatePoints = MatOfPoint2f()
-                    goodTemplatePoints.fromList(goodTemplatePointsList)
-                    val goodCameraPoints = MatOfPoint2f()
-                    goodCameraPoints.fromList(goodCameraPointsList)
-                    val homography = Calib3d.findHomography(
-                        goodTemplatePoints,
-                        goodCameraPoints,
-                        Calib3d.RANSAC,
-                        10.0
+            Log.e(TAG, "no keypoints in camera scene")
+            return
+        }
+        de!!.compute(mRgb, keyPointsCamera, descriptorsCamera)
+        if (descriptorsCamera!!.empty()) {
+            Log.e(TAG, "no descriptors in camera scene")
+        }
+        dm!!.match(descriptorsTemplate, descriptorsCamera, matches)
+        cornersCamera!!.create(0, 0, cornersCamera!!.type())
+        val matchesList = matches!!.toList()
+        if (matchesList.size >= 4) {
+            //float maxDist = 0;
+            val minDist = 100f
+            val keyPointsTemplateList = keyPointsTemplate!!.toList()
+            val keyPointsCameraList = keyPointsCamera!!.toList()
+            val goodTemplatePointsList = ArrayList<Point>()
+            val goodCameraPointsList = ArrayList<Point>()
+            val maxGoodMatchDist = (3 * minDist).toDouble()
+            for (match in matchesList) {
+                if (match.distance < maxGoodMatchDist) {
+                    goodTemplatePointsList.add(
+                        keyPointsTemplateList[match.queryIdx].pt
                     )
-                    if (!homography.empty()) {
-                        Core.perspectiveTransform(cornersTemplate, cornersCamera, homography)
-                        cornersCamera!!.convertTo(intCornersCamera, CvType.CV_32S)
-                        val bb = Imgproc.boundingRect(intCornersCamera)
-                        if (Imgproc.isContourConvex(intCornersCamera) && bb.width > 100 && bb.width < 1000) {
-                            if (cornersCamera!!.height() >= 4) {
-                                // draw lines around detected object on top of camera image
-                                Imgproc.line(
-                                    output,
-                                    Point(cornersCamera!![0, 0]),
-                                    Point(cornersCamera!![1, 0]),
-                                    KEY_COLOR,
-                                    4
-                                )
-                                Imgproc.line(
-                                    output,
-                                    Point(cornersCamera!![1, 0]),
-                                    Point(cornersCamera!![2, 0]),
-                                    KEY_COLOR,
-                                    4
-                                )
-                                Imgproc.line(
-                                    output,
-                                    Point(cornersCamera!![2, 0]),
-                                    Point(cornersCamera!![3, 0]),
-                                    KEY_COLOR,
-                                    4
-                                )
-                                Imgproc.line(
-                                    output,
-                                    Point(cornersCamera!![3, 0]),
-                                    Point(cornersCamera!![0, 0]),
-                                    KEY_COLOR,
-                                    4
-                                )
-                            }
-                        }
+                    goodCameraPointsList.add(
+                        keyPointsCameraList[match.trainIdx].pt
+                    )
+                }
+            }
+            val goodTemplatePoints = MatOfPoint2f()
+            goodTemplatePoints.fromList(goodTemplatePointsList)
+            val goodCameraPoints = MatOfPoint2f()
+            goodCameraPoints.fromList(goodCameraPointsList)
+            val homography = Calib3d.findHomography(
+                goodTemplatePoints,
+                goodCameraPoints,
+                Calib3d.RANSAC,
+                10.0
+            )
+            if (!homography.empty()) {
+                Core.perspectiveTransform(cornersTemplate, cornersCamera, homography)
+                cornersCamera!!.convertTo(intCornersCamera, CvType.CV_32S)
+                val bb = Imgproc.boundingRect(intCornersCamera)
+                if (Imgproc.isContourConvex(intCornersCamera) && bb.width > 100 && bb.width < 1000) {
+                    if (cornersCamera!!.height() >= 4) {
+                        // draw lines around detected object on top of camera image
+                        Imgproc.line(
+                            output,
+                            Point(cornersCamera!![0, 0]),
+                            Point(cornersCamera!![1, 0]),
+                            KEY_COLOR,
+                            4
+                        )
+                        Imgproc.line(
+                            output,
+                            Point(cornersCamera!![1, 0]),
+                            Point(cornersCamera!![2, 0]),
+                            KEY_COLOR,
+                            4
+                        )
+                        Imgproc.line(
+                            output,
+                            Point(cornersCamera!![2, 0]),
+                            Point(cornersCamera!![3, 0]),
+                            KEY_COLOR,
+                            4
+                        )
+                        Imgproc.line(
+                            output,
+                            Point(cornersCamera!![3, 0]),
+                            Point(cornersCamera!![0, 0]),
+                            KEY_COLOR,
+                            4
+                        )
                     }
                 }
-            } else {
-                Log.e(TAG, "no descriptors in camera scene")
             }
-        } else {
-            Log.e(TAG, "no keypoints in camera scene")
         }
     }
 
