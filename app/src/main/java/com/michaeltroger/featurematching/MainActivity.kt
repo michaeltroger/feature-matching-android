@@ -1,6 +1,8 @@
 package com.michaeltroger.featurematching
 
+import android.Manifest
 import android.app.Activity
+import android.content.pm.PackageManager
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2
 import org.opencv.features2d.FeatureDetector
 import org.opencv.features2d.DescriptorExtractor
@@ -12,6 +14,9 @@ import android.util.Log
 import android.view.WindowManager
 import android.view.SurfaceView
 import android.view.View
+import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import org.opencv.android.*
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame
 import org.opencv.calib3d.Calib3d
@@ -19,7 +24,7 @@ import org.opencv.core.*
 import java.io.IOException
 import java.util.ArrayList
 
-class MainActivity : Activity(), CvCameraViewListener2 {
+class MainActivity : ComponentActivity(), CvCameraViewListener2 {
     private var mOpenCvCameraView: CameraBridgeViewBase? = null
 
     /**
@@ -102,6 +107,31 @@ class MainActivity : Activity(), CvCameraViewListener2 {
      * the good detected corners recognized in camera image as integers
      */
     private var intCornersCamera: MatOfPoint? = null
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+                onPermissionGranted()
+            } else {
+                checkPermissonAndInitialize()
+            }
+        }
+
+    private fun checkPermissonAndInitialize() {
+        if (ContextCompat.checkSelfPermission(baseContext, Manifest.permission.CAMERA)
+            == PackageManager.PERMISSION_GRANTED) {
+            onPermissionGranted()
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    private fun onPermissionGranted() {
+        mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS)
+    }
+
     private val mLoaderCallback: BaseLoaderCallback = object : BaseLoaderCallback(this) {
         override fun onManagerConnected(status: Int) {
             when (status) {
@@ -188,7 +218,7 @@ class MainActivity : Activity(), CvCameraViewListener2 {
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback)
         } else {
             Log.d(TAG, "OpenCV library found inside package. Using it!")
-            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS)
+            checkPermissonAndInitialize()
         }
     }
 
