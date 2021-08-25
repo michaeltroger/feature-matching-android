@@ -16,7 +16,9 @@ Attention: This app was created in 2016. I was a beginner to Android development
 
 ### Template image ###
 Used default template image:
+
 <img src="/app/src/main/res/drawable/coca_cola.bmp" alt="" width="200" />
+
 Copyright of the logo: The Coca-Cola Company
 
 ### Who do I talk to? ###
