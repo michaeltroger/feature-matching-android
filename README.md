@@ -6,7 +6,6 @@ Attention: This app was created in 2016. I was a beginner to Android development
 
 ### What is this repository for? ###
 * Uses the camera image to search for a specified template image within it via a feature matching approach using the OpenCV library. The detected object is marked with lines within the scene. This can be used to e.g. find a logo.
-* Be aware that template matching doesn't allow any rotations or zooming of the camera. Hold the camera without dip and at the 1:1 correct zoom. Otherwise the template image won't be found within the camera image.
 
 ### How do I get set up? ###
 * IDE: Android Studio (tested with 2020.3.1)
