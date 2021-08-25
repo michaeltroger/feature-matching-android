@@ -20,8 +20,6 @@ android {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:25.0.1'
-    compile project(':openCVLibrary300')
+    implementation 'com.android.support:appcompat-v7:25.4.0'
+    implementation project(':openCVLibrary300')
 }
