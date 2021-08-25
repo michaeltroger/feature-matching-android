@@ -251,6 +251,7 @@ class MainActivity : ComponentActivity(), CvCameraViewListener2 {
         de!!.compute(mRgb, keyPointsCamera, descriptorsCamera)
         if (descriptorsCamera!!.empty()) {
             Log.e(TAG, "no descriptors in camera scene")
+            return
         }
         dm!!.match(descriptorsTemplate, descriptorsCamera, matches)
         cornersCamera!!.create(0, 0, cornersCamera!!.type())
