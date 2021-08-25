@@ -244,7 +244,7 @@ class MainActivity : ComponentActivity(), CvCameraViewListener2 {
      */
     private fun keypointMatching() {
         fd!!.detect(mRgb, keyPointsCamera)
-        if (!keyPointsCamera!!.empty()) {
+        if (keyPointsCamera!!.empty()) {
             Log.e(TAG, "no keypoints in camera scene")
             return
         }
