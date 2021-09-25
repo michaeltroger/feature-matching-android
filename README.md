@@ -9,6 +9,7 @@ Copyright of the logo: The Coca-Cola Company
 
 ### What is this repository for? ###
 * Uses the camera image to search for a specified template image within it via a feature matching approach using the OpenCV library. The detected object is marked with lines within the scene. This can be used to e.g. find a logo.
+* More computer vision projects at https://michaeltroger.com/computervision/
 
 ### How do I get set up? ###
 * IDE: Android Studio (tested with 2020.3.1)
