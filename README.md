@@ -24,8 +24,5 @@ Used default template image:
 
 Copyright of the logo: The Coca-Cola Company
 
-### Who do I talk to? ###
-* Repo owner and developer: android@michaeltroger.com
-
 ### Credits
 * The feature matching is based on this official OpenCV tutorial http://docs.opencv.org/2.4/doc/tutorials/features2d/feature_homography/feature_homography.html Unlike in this application their version is using OpenCV 2, C++ and is for use with regular static images
