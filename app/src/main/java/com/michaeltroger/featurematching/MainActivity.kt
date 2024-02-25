@@ -101,6 +101,12 @@ class MainActivity : ComponentActivity(), CvCameraViewListener2 {
      */
     private var intCornersCamera: MatOfPoint? = null
 
+
+    /**
+     * Mask for the ORB detector
+     */
+    private var mask: Mat? = null
+
     private val requestPermissionLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()
@@ -158,6 +164,7 @@ class MainActivity : ComponentActivity(), CvCameraViewListener2 {
         keyPointsCamera = MatOfKeyPoint()
         descriptorsCamera = Mat()
         descriptorsTemplate = Mat()
+        mask = Mat()
         matches = MatOfDMatch()
 
         // load the specified image from file system in bgr color
@@ -179,8 +186,7 @@ class MainActivity : ComponentActivity(), CvCameraViewListener2 {
         Imgproc.cvtColor(bgr, templColor, Imgproc.COLOR_BGR2RGBA)
 
         // pre-calculate features and descriptors of template image
-        de!!.detect(templGray, keyPointsTemplate)
-        de!!.compute(templGray, keyPointsTemplate, descriptorsTemplate)
+        de!!.detectAndCompute(templGray, mask, keyPointsTemplate, descriptorsTemplate)
 
         // set the corners of the template image
         cornersTemplate = Mat(4, 1, CvType.CV_32FC2)
@@ -220,12 +226,7 @@ class MainActivity : ComponentActivity(), CvCameraViewListener2 {
      * responsible for keypoint matching - searches for template images within scene
      */
     private fun keypointMatching() {
-        de!!.detect(mRgb, keyPointsCamera)
-        if (keyPointsCamera!!.empty()) {
-            Log.e(TAG, "no keypoints in camera scene")
-            return
-        }
-        de!!.compute(mRgb, keyPointsCamera, descriptorsCamera)
+        de!!.detectAndCompute(mRgb, mask, keyPointsCamera, descriptorsCamera)
         if (descriptorsCamera!!.empty()) {
             Log.e(TAG, "no descriptors in camera scene")
             return
