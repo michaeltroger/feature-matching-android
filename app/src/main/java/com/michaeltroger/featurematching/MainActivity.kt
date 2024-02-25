@@ -1,11 +1,8 @@
 package com.michaeltroger.featurematching
 
 import android.Manifest
-import android.app.Activity
 import android.content.pm.PackageManager
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2
-import org.opencv.features2d.FeatureDetector
-import org.opencv.features2d.DescriptorExtractor
 import org.opencv.features2d.DescriptorMatcher
 import org.opencv.imgcodecs.Imgcodecs
 import org.opencv.imgproc.Imgproc
@@ -21,6 +18,7 @@ import org.opencv.android.*
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame
 import org.opencv.calib3d.Calib3d
 import org.opencv.core.*
+import org.opencv.features2d.ORB
 import java.io.IOException
 import java.util.ArrayList
 
@@ -28,14 +26,9 @@ class MainActivity : ComponentActivity(), CvCameraViewListener2 {
     private var mOpenCvCameraView: CameraBridgeViewBase? = null
 
     /**
-     * The ORB feature detector
+     * ORB feature detector * ORB descriptor extractor
      */
-    private var fd: FeatureDetector? = null
-
-    /**
-     * the ORB descriptor extractor
-     */
-    private var de: DescriptorExtractor? = null
+    private var de: ORB? = null
 
     /**
      * the BRUTEFORCE HAMMINGLUT descriptor matcher
@@ -129,67 +122,12 @@ class MainActivity : ComponentActivity(), CvCameraViewListener2 {
     }
 
     private fun onPermissionGranted() {
-        mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS)
-    }
-
-    private val mLoaderCallback: BaseLoaderCallback = object : BaseLoaderCallback(this) {
-        override fun onManagerConnected(status: Int) {
-            when (status) {
-                SUCCESS -> {
-                    Log.i(TAG, "OpenCV loaded successfully")
-                    mOpenCvCameraView!!.enableView()
-                    fd = FeatureDetector.create(FeatureDetector.ORB)
-                    de = DescriptorExtractor.create(DescriptorExtractor.ORB)
-                    dm = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT)
-                    keyPointsTemplate = MatOfKeyPoint()
-                    keyPointsCamera = MatOfKeyPoint()
-                    descriptorsCamera = Mat()
-                    descriptorsTemplate = Mat()
-                    matches = MatOfDMatch()
-
-                    // load the specified image from file system in bgr color
-                    var bgr: Mat? = null
-                    try {
-                        bgr = Utils.loadResource(
-                            applicationContext,
-                            TEMPLATE_IMAGE,
-                            Imgcodecs.CV_LOAD_IMAGE_COLOR
-                        )
-                    } catch (e: IOException) {
-                        e.printStackTrace()
-                    }
-
-                    // convert the loaded image to gray-scale and color
-                    templGray = Mat()
-                    templColor = Mat()
-                    Imgproc.cvtColor(bgr, templGray, Imgproc.COLOR_BGR2GRAY)
-                    Imgproc.cvtColor(bgr, templColor, Imgproc.COLOR_BGR2RGBA)
-
-                    // pre-calculate features and descriptors of template image
-                    fd!!.detect(templGray, keyPointsTemplate)
-                    de!!.compute(templGray, keyPointsTemplate, descriptorsTemplate)
-
-                    // set the corners of the template image
-                    cornersTemplate = Mat(4, 1, CvType.CV_32FC2)
-                    cornersTemplate!!.put(0, 0, 0.0, 0.0)
-                    cornersTemplate!!.put(1, 0, templGray!!.cols().toDouble(), 0.0)
-                    cornersTemplate!!.put(
-                        2,
-                        0,
-                        templGray!!.cols().toDouble(),
-                        templGray!!.rows().toDouble()
-                    )
-                    cornersTemplate!!.put(3, 0, 0.0, templGray!!.rows().toDouble())
-
-                    // init matrices who hold detected corners later
-                    cornersCamera = Mat(4, 1, CvType.CV_32FC2)
-                    intCornersCamera = MatOfPoint()
-                }
-                else -> {
-                    super.onManagerConnected(status)
-                }
-            }
+        if (FIXED_FRAME_SIZE) {
+            mOpenCvCameraView!!.setMaxFrameSize(FRAME_SIZE_WIDTH, FRAME_SIZE_HEIGHT)
         }
+        mOpenCvCameraView!!.visibility = SurfaceView.VISIBLE
+        mOpenCvCameraView!!.setCvCameraViewListener(this)
+        mOpenCvCameraView!!.setCameraPermissionGranted()
     }
 
     public override fun onCreate(savedInstanceState: Bundle?) {
@@ -199,11 +137,8 @@ class MainActivity : ComponentActivity(), CvCameraViewListener2 {
         setContentView(R.layout.activity_main)
         mOpenCvCameraView =
             findViewById<View>(R.id.tutorial1_activity_java_surface_view) as CameraBridgeViewBase
-        if (FIXED_FRAME_SIZE) {
-            mOpenCvCameraView!!.setMaxFrameSize(FRAME_SIZE_WIDTH, FRAME_SIZE_HEIGHT)
-        }
-        mOpenCvCameraView!!.visibility = SurfaceView.VISIBLE
-        mOpenCvCameraView!!.setCvCameraViewListener(this)
+
+        checkPermissonAndInitialize()
     }
 
     public override fun onPause() {
@@ -213,13 +148,55 @@ class MainActivity : ComponentActivity(), CvCameraViewListener2 {
 
     public override fun onResume() {
         super.onResume()
-        if (!OpenCVLoader.initDebug()) {
-            Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization")
-            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback)
-        } else {
-            Log.d(TAG, "OpenCV library found inside package. Using it!")
-            checkPermissonAndInitialize()
+        OpenCVLoader.initLocal()
+
+        Log.i(TAG, "OpenCV loaded successfully")
+        mOpenCvCameraView!!.enableView()
+        de = ORB.create()
+        dm = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT)
+        keyPointsTemplate = MatOfKeyPoint()
+        keyPointsCamera = MatOfKeyPoint()
+        descriptorsCamera = Mat()
+        descriptorsTemplate = Mat()
+        matches = MatOfDMatch()
+
+        // load the specified image from file system in bgr color
+        var bgr: Mat? = null
+        try {
+            bgr = Utils.loadResource(
+                applicationContext,
+                TEMPLATE_IMAGE,
+                Imgcodecs.IMREAD_COLOR
+            )
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
+
+        // convert the loaded image to gray-scale and color
+        templGray = Mat()
+        templColor = Mat()
+        Imgproc.cvtColor(bgr, templGray, Imgproc.COLOR_BGR2GRAY)
+        Imgproc.cvtColor(bgr, templColor, Imgproc.COLOR_BGR2RGBA)
+
+        // pre-calculate features and descriptors of template image
+        de!!.detect(templGray, keyPointsTemplate)
+        de!!.compute(templGray, keyPointsTemplate, descriptorsTemplate)
+
+        // set the corners of the template image
+        cornersTemplate = Mat(4, 1, CvType.CV_32FC2)
+        cornersTemplate!!.put(0, 0, 0.0, 0.0)
+        cornersTemplate!!.put(1, 0, templGray!!.cols().toDouble(), 0.0)
+        cornersTemplate!!.put(
+            2,
+            0,
+            templGray!!.cols().toDouble(),
+            templGray!!.rows().toDouble()
+        )
+        cornersTemplate!!.put(3, 0, 0.0, templGray!!.rows().toDouble())
+
+        // init matrices who hold detected corners later
+        cornersCamera = Mat(4, 1, CvType.CV_32FC2)
+        intCornersCamera = MatOfPoint()
     }
 
     public override fun onDestroy() {
@@ -243,7 +220,7 @@ class MainActivity : ComponentActivity(), CvCameraViewListener2 {
      * responsible for keypoint matching - searches for template images within scene
      */
     private fun keypointMatching() {
-        fd!!.detect(mRgb, keyPointsCamera)
+        de!!.detect(mRgb, keyPointsCamera)
         if (keyPointsCamera!!.empty()) {
             Log.e(TAG, "no keypoints in camera scene")
             return
@@ -334,7 +311,7 @@ class MainActivity : ComponentActivity(), CvCameraViewListener2 {
         /**
          * The template image to use
          */
-        private const val TEMPLATE_IMAGE = R.drawable.coca_cola
+        private val TEMPLATE_IMAGE = R.drawable.coca_cola
 
         /**
          * frame size width
